@@ -1,0 +1,7 @@
+.idea/
+__pycache__/
+*.pyc
+venv/
+.env
+app/database/flashcard.db
+t_run.py
