@@ -3,7 +3,7 @@ from app.repositories.word_repository import update_word_score
 
 def check_answer(prompt_side, word, user_answer):
     # "ru" → показали русский, ожидаем английский
-    if prompt_side == "ru": # "ru" → показали русский, ожидаем английский
+    if prompt_side == "ru":
         expected = word.en
     # "en" → показали английский, ожидаем русский
     elif prompt_side == "en":

@@ -13,15 +13,15 @@ class WordDB(Base):
     _score = Column("score", Float)
     topic = Column(String)
 
-    @property
     # property — позволяет обращаться к методу как к обычному полю объекта
     # используется чтобы контролировать чтение значения score
+    @property
     def score(self):
         return self._score
 
-    @score.setter
     # setter — перехватывает присвоение значения свойству
     # здесь используется чтобы централизованно ограничить score диапазоном 0..10
+    @score.setter
     def score(self, value):
         if value < 0:
             self._score = 0
@@ -30,22 +30,22 @@ class WordDB(Base):
         else:
             self._score = value
 
+    # метод инкапсулирует правила изменения score после ответа
+    # изменение происходит через property → автоматически применяется setter
     def update_score(self, is_correct):
-        # метод инкапсулирует правила изменения score после ответа
-        # изменение происходит через property → автоматически применяется setter
         if not self.is_learned:
             change = 1.0 if is_correct else -0.5
             self.score += change
 
-    @property
     # вычисляемое свойство — значение рассчитывается на основе других полей
+    @property
     def is_learned(self):
         return self.score >= 10
 
+    # вспомогательный метод для сброса прогресса обучения
     def reset_score(self):
-        # вспомогательный метод для сброса прогресса обучения
         self.score = 0
 
+    # принудительно переводит слово в состояние "выучено"
     def mark_learned(self):
-        # принудительно переводит слово в состояние "выучено"
         self.score = 10.0

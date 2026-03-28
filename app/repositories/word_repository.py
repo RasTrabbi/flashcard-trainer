@@ -5,11 +5,13 @@ from sqlalchemy import select, delete
 
 from app.models.db_models import WordDB
 
+# Получаем слово по id
 def get_word_by_id(session: Session, word_id: int):
-    # Получаем одну запись по primary key.
-    # Если записи нет, вернется None.
+    # session.get(...) ищет запись по primary key
+    # если запись не найдена, вернётся None
     return session.get(WordDB, word_id)
 
+# Добавляем слово в БД
 def create_word(session: Session, en: str, ru: str, topic: str | None = None):
     # создаем ORM объект WordDB
     # на этом этапе это обычный Python объект, в базе его еще нет
@@ -23,72 +25,69 @@ def create_word(session: Session, en: str, ru: str, topic: str | None = None):
 
     return word
 
+# Ищем слово по id и удаляем если нашли
 def delete_word_by_id(session: Session, word_id: int):
     word = session.get(WordDB, word_id)
 
-    if word:
+    if word is not None:
         session.delete(word)
         session.commit()
 
-limit = 20
-
-# Собираем список случайных слов, которые ещё не выучены (score < 10)
-# Список случайный или по темам (topic)
-def get_learning_words_batch(session: Session, limit: int, topic: str | None = None):
-    # Защита от некорректного limit
+def _get_words_batch(session: Session, limit: int, topic: str | None, score_filter):
+    # Защита от некорректного Limit
     if limit <= 0:
         return []
 
-    # Отбираем id, ещё невыученных слов
-    stmt_ids = select(WordDB.id).where(WordDB._score < 10)
-    # Фильтр по теме, если получил
+    # Фильтр по score_filter, который получаем снаружи
+    stmt_ids = select(WordDB.id).where(score_filter)
+
+    # Фильтр по Теме, если передали
     if topic is not None:
         stmt_ids = stmt_ids.where(WordDB.topic == topic)
-    # Получаем список отобранных id
+
+    # execute(stmt_ids) — запускает запрос к БД
+    # scalars() — забирает только значения первого столбца (id)
+    # all() — собирает результат в обычный Python список
     candidate_ids = list(session.execute(stmt_ids).scalars().all())
 
-    # Если нашли не нашли слов (не отобрали id), то возвращаем пустой список
+    # Возвращаем пустой список, если после фильтров не смогли отобрать ни одного слова
     if not candidate_ids:
         return []
 
-    # Слов < limit - берем все что есть
-    # Иначе, берем слова по случайным id в пределах limit
     if len(candidate_ids) <= limit:
         selected_ids = candidate_ids
     else:
         selected_ids = random.sample(candidate_ids, limit)
 
-    # По отобранным id подтягиваем полные объекты WordDB
+    # По отобранным id загружаем полные объекты WordDB
     stmt_words = select(WordDB).where(WordDB.id.in_(selected_ids))
     words = list(session.execute(stmt_words).scalars().all())
 
     return words
 
-# Аналогично get_learning_words_batch, но для уже выученных слов  (score == 10)
+# Передаем правило "только выученные слова"
 def get_review_words_batch(session: Session, limit: int, topic: str | None = None):
-    if limit <= 0:
-        return []
+    return _get_words_batch(
+        session,
+        limit,
+        topic,
+        WordDB._score == 10
+    )
+# Передаем правило "слова, которые ещё не выучены"
+def get_learning_words_batch(session: Session, limit: int, topic: str | None = None):
+    return _get_words_batch(
+        session,
+        limit,
+        topic,
+        WordDB._score < 10
+    )
 
-    stmt_ids = select(WordDB.id).where(WordDB._score == 10)
-    if topic is not None:
-        stmt_ids = stmt_ids.where(WordDB.topic == topic)
-    candidate_ids = list(session.execute(stmt_ids).scalars().all())
-
-    if not candidate_ids:
-        return []
-
-    if len(candidate_ids) <= limit:
-        selected_ids = candidate_ids
-    else:
-        selected_ids = random.sample(candidate_ids, limit)
-
-    stmt_words = select(WordDB).where(WordDB.id.in_(selected_ids))
-    words = list(session.execute(stmt_words).scalars().all())
-
-    return words
-
+# Возвращаем все слова из БД
 def get_all_words(session: Session):
+    # формируем SELECT * FROM words
     stmt_words = select(WordDB)
+
+    # выполняем запрос и получаем список всех объектов WordDB
     words = list(session.execute(stmt_words).scalars().all())
     return words
 

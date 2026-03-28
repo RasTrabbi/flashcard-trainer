@@ -20,3 +20,14 @@ SessionLocal = sessionmaker(bind=engine)
 
 # создание таблиц
 Base.metadata.create_all(engine)
+
+def get_db():
+    db = SessionLocal()
+
+    try:
+        # отдаём session в endpoint
+        yield db
+
+    finally:
+        # отдаём session в endpoint
+        db.close()
