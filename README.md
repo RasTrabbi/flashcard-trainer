@@ -19,12 +19,13 @@ Each word has a learning score that changes based on user answers.
 ## Текущий этап / Current Stage
 
 ```text
-Python core → SQLite → SQLAlchemy ORM
+Python core → SQLite → SQLAlchemy ORM → FastAPI
 ```
 
 * реализована работа с базой данных через ORM
 * внедрён repository слой
 * удалён старый sqlite3 подход
+* реализован API слой (FastAPI)
 
 ---
 
@@ -38,6 +39,9 @@ Python core → SQLite → SQLAlchemy ORM
   * обновление прогресса
 * Повторение (review):
   * выбор слов со `score == 10`
+* Обработка ответа пользователя:
+  * проверка ответа
+  * обновление `score`
 
 ---
 
@@ -46,7 +50,8 @@ Python core → SQLite → SQLAlchemy ORM
 ```text
 app
 │
-├ models        → ORM модели и бизнес-логика
+├ api           → FastAPI endpoints
+├ models       → ORM модели и бизнес-логика
 ├ repositories → работа с базой данных
 ├ services     → логика обучения
 ├ database     → session и подключение к БД
@@ -61,6 +66,7 @@ app
 * Python
 * SQLite
 * SQLAlchemy (ORM)
+* FastAPI
 
 ---
 
@@ -70,14 +76,18 @@ app
 * Repository слой:
   * create / delete / update
   * batch выборка слов
+* API слой (FastAPI):
+  * POST /words
+  * GET /words
+  * GET /learning
+  * POST /answer
 * Работа с БД через SQLAlchemy
-* Разделение на слои (models / services / repository)
+* Разделение на слои (models / services / repository / api)
 
 ---
 
 ## Что дальше / Next Steps
 
-* FastAPI (API слой)
 * pytest (автотесты)
 * улучшение архитектуры
 
