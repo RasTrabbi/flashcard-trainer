@@ -19,13 +19,13 @@ Each word has a learning score that changes based on user answers.
 ## Текущий этап / Current Stage
 
 ```text
-Python core → SQLite → SQLAlchemy ORM → FastAPI
+Python core → SQLite → SQLAlchemy ORM → FastAPI → pytest (tests)
 ```
 
 * реализована работа с базой данных через ORM
 * внедрён repository слой
-* удалён старый sqlite3 подход
 * реализован API слой (FastAPI)
+* добавлены unit и API тесты (pytest + TestClient)
 
 ---
 
@@ -34,6 +34,7 @@ Python core → SQLite → SQLAlchemy ORM → FastAPI
 * Добавление слов / Add words
 * Удаление слов / Delete words
 * Получение всех слов / Get all words
+* Получение слова по ID / Get word by ID
 * Обучение (learning):
   * выбор случайных слов со `score < 10`
   * обновление прогресса
@@ -67,6 +68,7 @@ app
 * SQLite
 * SQLAlchemy (ORM)
 * FastAPI
+* pytest
 
 ---
 
@@ -75,21 +77,32 @@ app
 * Word модель с бизнес-логикой (`score`, `is_learned`)
 * Repository слой:
   * create / delete / update
-  * batch выборка слов
+  * batch выборка слов (learning / review)
+* Service слой:
+  * check_answer
+  * process_answer
 * API слой (FastAPI):
   * POST /words
   * GET /words
+  * GET /words/{id}
+  * DELETE /words/{id}
   * GET /learning
+  * GET /review
   * POST /answer
 * Работа с БД через SQLAlchemy
 * Разделение на слои (models / services / repository / api)
-
+* Unit тесты:
+  * model / service / repository
+* API тесты:
+  * FastAPI TestClient
 ---
 
 ## Что дальше / Next Steps
 
-* pytest (автотесты)
-* улучшение архитектуры
+* logging (логирование)
+* settings.py (конфигурация проекта)
+* HTTP client для работы с API
+* Telegram bot (интеграция с backend)
 
 ---
 

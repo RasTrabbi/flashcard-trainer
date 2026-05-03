@@ -1,10 +1,10 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.repositories.word_repository import create_word, get_all_words, get_learning_words_batch, get_word_by_id
+from app.repositories.word_repository import create_word, get_all_words, get_learning_words_batch, get_word_by_id, delete_word_by_id, get_review_words_batch
 from app.schemas.word import WordCreate, WordRead, AnswerRequest, AnswerResult
 from app.services.learning import process_answer
 
@@ -28,6 +28,26 @@ def read_words_endpoint(db: Session = Depends(get_db)):
     # FastAPI сам преобразует список WordDB → список WordRead
     return words
 
+# получаем слово по ID из БД
+@router.get("/words/{word_id}", response_model=WordRead)
+def get_word_endpoint(word_id: int, db: Session = Depends(get_db)):
+    word = get_word_by_id(db, word_id)
+
+    if word is None:
+        raise HTTPException(status_code=404, detail="Word not found")
+    return word
+
+# удаляем слово по ID из БД
+@router.delete("/words/{word_id}")
+def delete_word_endpoint(word_id: int, db: Session = Depends(get_db)):
+    word = get_word_by_id(db, word_id)
+
+    if word is None:
+        raise HTTPException(status_code=404, detail="Word not found")
+
+    delete_word_by_id(db, word_id)
+    return Response(status_code=204)
+
 # Получаем batch слов для обучения (score < 10)
 @router.get("/learning", response_model=List[WordRead])
 def get_learning_words_endpoint(db: Session = Depends(get_db), limit: int = 20, topic: str | None = None):
@@ -37,13 +57,20 @@ def get_learning_words_endpoint(db: Session = Depends(get_db), limit: int = 20, 
     # вызываем repository → получаем список WordDB по фильтру learning
     return words
 
+# Получаем batch  для изученных слов (score == 10)
+@router.get("/review", response_model=List[WordRead])
+def get_review_words_endpoint(db: Session = Depends(get_db), limit: int = 20, topic: str | None = None):
+    words = get_review_words_batch(db, limit, topic)
+
+    return words
+
 @router.post("/answer", response_model=AnswerResult)
 def process_answer_endpoint(answer: AnswerRequest, db: Session = Depends(get_db)):
     word = get_word_by_id(db, answer.word_id)
 
     # Возвращаем 404, если слово не найдено
     if word is None:
-        raise HTTPException(status_code=404, detail="Answer not found")
+        raise HTTPException(status_code=404, detail="Word not found")
 
     # Проверяем ответ и обновляем score
     is_correct = process_answer(db, word, answer.prompt_side, answer.user_answer)

@@ -1,4 +1,3 @@
-from app.models.word import Word
 from app.repositories.word_repository import update_word_score
 
 def check_answer(prompt_side, word, user_answer):
